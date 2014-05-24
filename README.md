@@ -9,7 +9,7 @@ Organelle for spawning command targeting/using file for transformations or manip
         path: "full/path/to/root/folder/with/file"
       },
       "dest": "relative/path/to/cwd/as/destination/folder",
-      "root": "full/path/to/root/folder",
+      "root": "path/to/root/folder",
       "cmd": "command to be executed with {srcfile} and {destfile} placeholders replaced",
       "name": "optional name of spawned child"
     }

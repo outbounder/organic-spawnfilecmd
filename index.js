@@ -20,8 +20,10 @@ module.exports = Organel.extend(function(plasma, dna){
 }, {
   getRelativePath: function(options) {
     var result = options.data.path.split(process.cwd()).pop()
-    if(options.dest && options.root)
+    if(options.dest && options.root) {
+      options.root = options.root.replace(/\//g, path.sep) // fix for win paths
       result = options.data.path.split(options.root).pop()
+    }
     return result
   },
   getDestFile: function(options) {
