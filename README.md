@@ -12,6 +12,8 @@ Organelle for spawning command targeting/using file for transformations or manip
       "root": "path/to/root/folder",
       "cmd": "command to be executed with {srcfile} and {destfile} placeholders replaced",
       "name": "optional name of spawned child"
+      "silent": false,
+      "redirectStderrToStdout": false
     }
 
 ## reacts to `dna.reactOn`

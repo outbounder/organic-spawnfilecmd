@@ -1,4 +1,3 @@
-var Organel = require("organic").Organel
 var exec = require("child_process").exec
 var path = require('path')
 var shelljs = require("shelljs")
@@ -10,72 +9,78 @@ var createLogPrefix = function(options, relativePath) {
   return (options.name?"["+options.name+"-":"[")+relativePath+"]"
 }
 
-module.exports = Organel.extend(function(plasma, dna){
-  Organel.call(this, plasma, dna)
+var Organel = module.exports = function(plasma, dna){
   if(dna.reactOn)
-    this.on(dna.reactOn, this.reaction)
+    plasma.on(dna.reactOn, this.reaction, this)
   else
     this.reaction(dna)
-  this.on("kill", this.kill)
-}, {
-  getRelativePath: function(options) {
-    var result = options.data.path.split(process.cwd()).pop()
-    if(options.dest && options.root) {
-      options.root = options.root.replace(/\//g, path.sep) // fix for win paths
-      result = options.data.path.split(options.root).pop()
-    }
-    return result
-  },
-  getDestFile: function(options) {
-    var result = null
-    if(options.dest && options.root)
-      result = path.join(process.cwd(), options.dest, this.getRelativePath(options))
-    return result
-  },
-  reaction: function(options, next) {
-    var destFile = this.getDestFile(options)
+  plasma.on("kill", this.kill, this)
+}
 
-    if(options.dest && options.root)
-      shelljs.mkdir('-p', path.dirname(destFile))
-
-    var logPrefix = createLogPrefix(options, this.getRelativePath(options))
-    
-    var cmd = format(options.cmd, _.extend({
-      srcfile: options.data.path, 
-      destfile: destFile
-    }, options))
-
-    if(options.log)
-      console.log(logPrefix, cmd)
-    
-    var hasError = false
-    this.child = exec(cmd)
-    this.child.on("error", function(err){
-      if(options.log)
-        console.error(logPrefix, err)
-      if(next)
-        next(err)
-      else
-        throw err
-    })
-    this.child.stderr.on("data", function(chunk){
-      hasError = true
-      console.error(logPrefix, chunk)
-    })
-    if(options.log)
-      this.child.stdout.on("data", function(chunk){
-        console.log(logPrefix, chunk)
-      })
-    this.child.on("exit", function(exitcode) {
-      hasError = hasError || exitcode != 0
-      if(options.log)
-        console.info(logPrefix, hasError?"success":"failure")
-      if(next)
-        next(hasError?null:new Error(logPrefix+" failed with code "+exitcode))
-    })
-  },
-  kill: function(c, next){
-    killprocess(this.child.pid, next)
-    return false;
+Organel.prototype.getRelativePath = function(options) {
+  var result = options.data.path.split(process.cwd()).pop()
+  if(options.dest && options.root) {
+    options.root = options.root.replace(/\//g, path.sep) // fix for win paths
+    result = options.data.path.split(options.root).pop()
   }
-})
+  return result
+}
+
+Organel.prototype.getDestFile = function(options) {
+  var result = null
+  if(options.dest && options.root)
+    result = path.join(process.cwd(), options.dest, this.getRelativePath(options))
+  return result
+}
+
+Organel.prototype.reaction = function(options, next) {
+  var destFile = this.getDestFile(options)
+
+  if(options.dest && options.root)
+    shelljs.mkdir('-p', path.dirname(destFile))
+
+  var logPrefix = createLogPrefix(options, this.getRelativePath(options))
+  
+  var cmd = format(options.cmd, _.extend({
+    srcfile: options.data.path, 
+    destfile: destFile
+  }, options))
+
+  if(options.log)
+    console.log(logPrefix, cmd)
+  
+  var hasError = false
+  this.child = exec(cmd)
+  this.child.on("error", function(err){
+    if(options.log)
+      console.error(logPrefix, err)
+    if(next)
+      next(err)
+    else
+      throw err
+  })
+  if(!options.silent) {
+    this.child.stderr.on("data", function(chunk){
+      if(!options.redirectStderrToStdout) {
+        hasError = true
+        console.error(logPrefix, chunk)
+      } else
+        console.log(logPrefix, chunk)
+    })
+    this.child.stdout.on("data", function(chunk){
+      console.log(logPrefix, chunk)
+    })
+  }
+  this.child.on("exit", function(exitcode) {
+    hasError = hasError || exitcode != 0
+    if(options.log)
+      console.info(logPrefix, hasError?"success":"failure")
+    if(next)
+      next(hasError?null:new Error(logPrefix+" failed with code "+exitcode))
+  })
+}
+
+Organel.prototype.kill = function(c, next){
+  killprocess(this.child.pid, next)
+  return false;
+}
