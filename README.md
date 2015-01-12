@@ -13,7 +13,8 @@ Organelle for spawning command targeting/using file for transformations or manip
       "cmd": "command to be executed with {srcfile} and {destfile} placeholders replaced",
       "name": "optional name of spawned child"
       "silent": false,
-      "redirectStderrToStdout": false
+      "redirectStderrToStdout": false,
+      "emitReady": false
     }
 
 ## reacts to `dna.reactOn`
@@ -22,6 +23,8 @@ In case `dna.reactOn` is empty, once organelle is build it uses provided dna as 
 and executes `cmd`. 
 
 Note that having `root` and `dest` properties forces the organelle to create recursively containing folder of `destfile`
+
+Emits Chemical { type: dna.emitReady, err: Error || undefined } once spawned command ends.
 
 ## reacts to `kill` chemical type
 

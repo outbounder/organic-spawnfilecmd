@@ -10,6 +10,7 @@ var createLogPrefix = function(options, relativePath) {
 }
 
 var Organel = module.exports = function(plasma, dna){
+  this.plasma = plasma
   if(dna.reactOn)
     plasma.on(dna.reactOn, this.reaction, this)
   else
@@ -34,6 +35,7 @@ Organel.prototype.getDestFile = function(options) {
 }
 
 Organel.prototype.reaction = function(options, next) {
+  var self = this
   var destFile = this.getDestFile(options)
 
   if(options.dest && options.root)
@@ -73,10 +75,13 @@ Organel.prototype.reaction = function(options, next) {
   }
   this.child.on("exit", function(exitcode) {
     hasError = hasError || exitcode != 0
+    var err = hasError?new Error(logPrefix+" failed with code "+exitcode):null
     if(options.log)
-      console.info(logPrefix, hasError?"success":"failure")
+      console.info(logPrefix, hasError?"failure":"success", exitcode)
+    if(options.emitReady)
+      self.plasma.emit({type: options.emitReady, err: err})
     if(next)
-      next(hasError?null:new Error(logPrefix+" failed with code "+exitcode))
+      next(err)
   })
 }
 
